@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebXR Beat Saber Clone - Base</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #000;
+        }
+    </style>
+    <!-- Import map to target exact Three.js releases securely -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { VRButton } from 'three/addons/webxr/VRButton.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        let scene, camera, renderer;
+        let leftControllerGrip, rightControllerGrip;
+
+        init();
+
+        function init() {
+            // 1. Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a10); // Subtle dark void
+
+            // 2. Camera Setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.set(0, 1.6, 0); // Average human height (1.6 meters)
+
+            // 3. Renderer Setup with WebXR enabled
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+
+            // Add the "ENTER VR" button UI onto screen
+            document.body.appendChild(VRButton.createButton(renderer));
+
+            // 4. Lighting Configuration
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
+            hemiLight.position.set(0, 20, 0);
+            scene.add(hemiLight);
+
+            // A tiny directional light to emphasize depth on meshes
+            const dirLight = new THREE.DirectionalLight(0x00ffff, 1.0);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            // 5. Setup WebXR Controller Grips & Load Custom Models
+            const loader = new GLTFLoader();
+
+            // Index 0: Typically Left Controller, Index 1: Typically Right
+            leftControllerGrip = renderer.xr.getControllerGrip(0);
+            scene.add(leftControllerGrip);
+
+            rightControllerGrip = renderer.xr.getControllerGrip(1);
+            scene.add(rightControllerGrip);
+
+            // Load Left Asset
+            loader.load('assets/l.glb', 
+                (gltf) => {
+                    const leftHandMesh = gltf.scene;
+                    leftControllerGrip.add(leftHandMesh);
+                    console.log("Left hand model loaded successfully!");
+                },
+                undefined,
+                (error) => console.error("Error loading left asset:", error)
+            );
+
+            // Load Right Asset
+            loader.load('assets/r.glb', 
+                (gltf) => {
+                    const rightHandMesh = gltf.scene;
+                    rightControllerGrip.add(rightHandMesh);
+                    console.log("Right hand model loaded successfully!");
+                },
+                undefined,
+                (error) => console.error("Error loading right asset:", error)
+            );
+
+            // 6. Handle Window Resizing safely
+            window.addEventListener('resize', onWindowResize);
+
+            // Start loop
+            renderer.setAnimationLoop(render);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 7. WebXR Render Loop
+        function render(time) {
+            // Your update logics (moving blocks, calculations) will sit here later
+            renderer.render(scene, camera);
+        }
+    </script>
+</body>
+</html>
+
